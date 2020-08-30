@@ -35,6 +35,11 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.ManagedReference
     internal partial class ManagedReferenceLinearAlgebraProvider : ILinearAlgebraProvider
     {
         /// <summary>
+        /// If true should use the System.Numerics.Vector SIMD accelerated operations
+        /// </summary>
+        public bool UseSIMD{ get; set; } = true;
+
+        /// <summary>
         /// Try to find out whether the provider is available, at least in principle.
         /// Verification may still fail if available, but it will certainly fail if unavailable.
         /// </summary>

@@ -31,6 +31,9 @@ using System;
 using MathNet.Numerics.Threading;
 using Complex = System.Numerics.Complex;
 using QRMethod = MathNet.Numerics.LinearAlgebra.Factorization.QRMethod;
+#if !NET40
+using SIMDVector = System.Numerics.Vector<double>;
+#endif
 using static System.FormattableString;
 
 namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
@@ -109,6 +112,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
             else
             {
+
                 for (int i = 0; i < result.Length; i++)
                 {
                     result[i] = alpha * x[i];
