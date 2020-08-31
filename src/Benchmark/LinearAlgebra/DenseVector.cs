@@ -5,11 +5,15 @@ using BenchmarkDotNet.Jobs;
 using MathNet.Numerics;
 using MathNet.Numerics.Providers.Common.Mkl;
 using MathNet.Numerics.Providers.LinearAlgebra;
-
+using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
 using Complex = System.Numerics.Complex;
+#if !NET40
+using SIMDVector = System.Numerics.Vector<double>;
+#endif
 
 namespace Benchmark.LinearAlgebra
 {
+    //[DisassemblyDiagnoser(printSource:true,exportHtml:true, exportCombinedDisassemblyReport:true)]
     [Config(typeof(Config))]
     public class DenseVector
     {
@@ -17,8 +21,8 @@ namespace Benchmark.LinearAlgebra
         {
             public Config()
             {
-                AddJob(Job.Default.WithRuntime(ClrRuntime.Net461).WithPlatform(Platform.X64).WithJit(Jit.RyuJit));
-                AddJob(Job.Default.WithRuntime(ClrRuntime.Net461).WithPlatform(Platform.X86).WithJit(Jit.LegacyJit));
+                //AddJob(Job.Default.WithRuntime(ClrRuntime.Net461).WithPlatform(Platform.X64).WithJit(Jit.RyuJit));
+                //AddJob(Job.Default.WithRuntime(ClrRuntime.Net461).WithPlatform(Platform.X86).WithJit(Jit.LegacyJit));
 #if !NET461
                 AddJob(Job.Default.WithRuntime(CoreRuntime.Core31).WithPlatform(Platform.X64).WithJit(Jit.RyuJit));
 #endif
@@ -33,10 +37,14 @@ namespace Benchmark.LinearAlgebra
         }
 
         [Params(4, 32, 128, 4096, 16384, 524288)]
+        //[Params(4096)]
         public int N { get; set; }
 
-        [Params(ProviderId.Managed, ProviderId.ManagedReference)] //, ProviderId.NativeMKL)]
+        [Params(ProviderId.Managed)]//, ProviderId.ManagedReference)] //, ProviderId.NativeMKL)]
         public ProviderId Provider { get; set; }
+
+        [ParamsAllValues]
+        public bool UseSIMD { get; set; }
 
         double[] _a;
         double[] _b;
@@ -52,6 +60,7 @@ namespace Benchmark.LinearAlgebra
             {
                 case ProviderId.Managed:
                     Control.UseManaged();
+                    Control.UseSIMD = UseSIMD;
                     break;
                 case ProviderId.ManagedReference:
                     Control.UseManagedReference();
@@ -69,7 +78,7 @@ namespace Benchmark.LinearAlgebra
             //_bv = Vector<double>.Build.Dense(_b);
         }
 
-        //[Benchmark(OperationsPerInvoke = 1)]
+        [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderAddArrays()
         {
             double[] r = new double[_a.Length];
@@ -81,12 +90,44 @@ namespace Benchmark.LinearAlgebra
             //return r;
         }
 
-        //[Benchmark(OperationsPerInvoke = 1)]
+        [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderScaleArrays()
         {
             double[] r = new double[_a.Length];
             LinearAlgebraControl.Provider.ScaleArray(2.0, _a, r);
             return r;
+        }
+
+        //[Benchmark]
+        public double[] SIMDScaleArray()
+        {
+            double[] result = new double[_a.Length];
+            double[] x = _a;
+            double alpha = 2;
+            int index = 0;
+#if !NET40
+            var alphaVec = new SIMDVector(alpha);
+            while (index <= result.Length - SIMDVector.Count)
+            {
+                var xVec = new SIMDVector(x, index);
+                var resultVec = alpha * xVec;
+                resultVec.CopyTo(result, index);
+                index += SIMDVector.Count;
+            }
+#endif
+            //handle whatever elements weren't processed by the SIMD code
+            for (int i = index; i < result.Length; i++)
+            {
+                result[i] = alpha * x[i];
+            }
+
+            return result;
+        }
+
+        //[Benchmark(OperationsPerInvoke = 1)]
+        public double ProviderDotProduct()
+        {
+            return LinearAlgebraControl.Provider.DotProduct(_a, _b);
         }
 
         [Benchmark(OperationsPerInvoke = 1)]

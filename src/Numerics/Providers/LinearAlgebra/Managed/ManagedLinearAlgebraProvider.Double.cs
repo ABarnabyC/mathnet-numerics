@@ -112,8 +112,22 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
             else
             {
-
-                for (int i = 0; i < result.Length; i++)
+                int index = 0;
+#if !NET40
+                if(Control.UseSIMD)
+                {
+                    var alphaVec = new SIMDVector(alpha);
+                    while(index <= result.Length - SIMDVector.Count)
+                    {
+                        var xVec = new SIMDVector(x, index);
+                        var resultVec = alpha * xVec;
+                        resultVec.CopyTo(result, index);
+                        index += SIMDVector.Count;
+                    }
+                }
+#endif
+                //handle whatever elements weren't processed by the SIMD code
+                for (int i = index; i < result.Length; i++)
                 {
                     result[i] = alpha * x[i];
                 }
@@ -203,7 +217,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                while(index <= result.Length - SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, index);
+                    var yVec = new SIMDVector(y, index);
+                    var resultVec = xVec + yVec;
+                    resultVec.CopyTo(result, index);
+                    index += SIMDVector.Count;
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] + y[i];
             }
@@ -241,7 +269,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                while(index <= result.Length - SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, index);
+                    var yVec = new SIMDVector(y, index);
+                    var resultVec = xVec - yVec;
+                    resultVec.CopyTo(result, index);
+                    index += SIMDVector.Count;
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] - y[i];
             }
@@ -279,7 +321,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                while(index <= result.Length - SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, index);
+                    var yVec = new SIMDVector(y, index);
+                    var resultVec = xVec * yVec;
+                    resultVec.CopyTo(result, index);
+                    index += SIMDVector.Count;
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] * y[i];
             }
