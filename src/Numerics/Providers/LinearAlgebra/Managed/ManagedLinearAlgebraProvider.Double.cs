@@ -177,7 +177,23 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
 
             double sum = 0.0;
-            for (var index = 0; index < y.Length; index++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                var resultVec = SIMDVector.Zero;
+                while(index <= y.Length - SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, index);
+                    var yVec = new SIMDVector(y, index);
+                    resultVec += xVec * yVec;
+                    index += SIMDVector.Count;
+                }
+                for(int i =0; i<SIMDVector.Count; i++)
+                    sum+=resultVec[i];
+            }
+#endif
+            for (int i = index; i < y.Length; i++)
             {
                 sum += y[index] * x[index];
             }
