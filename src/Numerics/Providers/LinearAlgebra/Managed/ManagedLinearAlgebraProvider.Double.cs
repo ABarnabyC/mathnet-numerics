@@ -74,14 +74,27 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
             else if (alpha == 1.0)
             {
-                for (int i = 0; i < result.Length; i++)
-                {
-                    result[i] = y[i] + x[i];
-                }
+                AddArrays(x, y, result);
             }
             else
             {
-                for (int i = 0; i < result.Length; i++)
+                int index = 0;
+#if !NET40
+                if(Control.UseSIMD)
+                {
+                    var alphaVec = new SIMDVector(alpha);
+                    //Calculate the index of the last element that can be handled by SIMD without overflowing
+                    index = x.Length / SIMDVector.Count * SIMDVector.Count;
+                    for(int i = 0; i < index; i+=SIMDVector.Count)
+                    {
+                        var xVec = new SIMDVector(x, i);
+                        var yVec = new SIMDVector(x, i);
+                        (yVec + (alphaVec * xVec)).CopyTo(result, i);
+                    }
+                }
+#endif
+                //handle whatever elements weren't processed by the SIMD code
+                for (int i = index; i < result.Length; i++)
                 {
                     result[i] = y[i] + (alpha * x[i]);
                 }
@@ -117,12 +130,12 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 if(Control.UseSIMD)
                 {
                     var alphaVec = new SIMDVector(alpha);
-                    while(index <= result.Length - SIMDVector.Count)
+                    //Calculate the index of the last element that can be handled by SIMD without overflowing
+                    index = x.Length / SIMDVector.Count * SIMDVector.Count;
+                    for(int i = 0; i < index; i+=SIMDVector.Count)
                     {
-                        var xVec = new SIMDVector(x, index);
-                        var resultVec = alpha * xVec;
-                        resultVec.CopyTo(result, index);
-                        index += SIMDVector.Count;
+                        var xVec = new SIMDVector(x, i);
+                        (alphaVec * xVec).CopyTo(result, i);
                     }
                 }
 #endif
@@ -181,15 +194,16 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
 #if !NET40
             if(Control.UseSIMD)
             {
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
                 var resultVec = SIMDVector.Zero;
-                while(index <= y.Length - SIMDVector.Count)
+                for(int i = 0; i < index; i+=SIMDVector.Count)
                 {
-                    var xVec = new SIMDVector(x, index);
-                    var yVec = new SIMDVector(y, index);
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
                     resultVec += xVec * yVec;
-                    index += SIMDVector.Count;
                 }
-                for(int i =0; i<SIMDVector.Count; i++)
+                for(int i = 0; i < SIMDVector.Count; i++)
                     sum+=resultVec[i];
             }
 #endif
@@ -237,13 +251,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
 #if !NET40
             if(Control.UseSIMD)
             {
-                while(index <= result.Length - SIMDVector.Count)
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
                 {
-                    var xVec = new SIMDVector(x, index);
-                    var yVec = new SIMDVector(y, index);
-                    var resultVec = xVec + yVec;
-                    resultVec.CopyTo(result, index);
-                    index += SIMDVector.Count;
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec + yVec).CopyTo(result, i);
                 }
             }
 #endif
@@ -289,13 +303,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
 #if !NET40
             if(Control.UseSIMD)
             {
-                while(index <= result.Length - SIMDVector.Count)
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
                 {
-                    var xVec = new SIMDVector(x, index);
-                    var yVec = new SIMDVector(y, index);
-                    var resultVec = xVec - yVec;
-                    resultVec.CopyTo(result, index);
-                    index += SIMDVector.Count;
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec - yVec).CopyTo(result, i);
                 }
             }
 #endif
@@ -341,13 +355,13 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
 #if !NET40
             if(Control.UseSIMD)
             {
-                while(index <= result.Length - SIMDVector.Count)
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
                 {
-                    var xVec = new SIMDVector(x, index);
-                    var yVec = new SIMDVector(y, index);
-                    var resultVec = xVec * yVec;
-                    resultVec.CopyTo(result, index);
-                    index += SIMDVector.Count;
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec * yVec).CopyTo(result, i);
                 }
             }
 #endif
