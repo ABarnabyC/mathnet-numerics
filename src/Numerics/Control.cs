@@ -300,6 +300,11 @@ namespace MathNet.Numerics
         }
 
         /// <summary>
+        /// If true should use the System.Numerics.Vector SIMD accelerated operations
+        /// </summary>
+        public static bool UseSIMD { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets the TaskScheduler used to schedule the worker tasks.
         /// </summary>
         public static TaskScheduler TaskScheduler { get; set; }
