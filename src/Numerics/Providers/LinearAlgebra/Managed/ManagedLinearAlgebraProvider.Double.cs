@@ -88,7 +88,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                     for(int i = 0; i < index; i+=SIMDVector.Count)
                     {
                         var xVec = new SIMDVector(x, i);
-                        var yVec = new SIMDVector(x, i);
+                        var yVec = new SIMDVector(y, i);
                         (yVec + (alphaVec * xVec)).CopyTo(result, i);
                     }
                 }
@@ -209,7 +209,7 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
 #endif
             for (int i = index; i < y.Length; i++)
             {
-                sum += y[index] * x[index];
+                sum += y[i] * x[i];
             }
 
             return sum;
