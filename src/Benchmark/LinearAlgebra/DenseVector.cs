@@ -37,15 +37,15 @@ namespace Benchmark.LinearAlgebra
         }
 
         [Params(4, 32, 128, 4096, 16384, 524288)]
-        //[Params(4096)]
         public int N { get; set; }
-
-        [Params(ProviderId.Managed)]//, ProviderId.ManagedReference)] //, ProviderId.NativeMKL)]
-        public ProviderId Provider { get; set; }
 
         [ParamsAllValues]
         public bool UseSIMD { get; set; }
 
+        [Params(ProviderId.Managed)]//, ProviderId.ManagedReference)] //, ProviderId.NativeMKL)]
+        public ProviderId Provider { get; set; }
+
+        double[] r;
         double[] _a;
         double[] _b;
         Complex[] _ac;
@@ -76,12 +76,24 @@ namespace Benchmark.LinearAlgebra
             _bc = Generate.Map2(_b, Generate.Normal(N, 200.0, 10.0), (b, i) => new Complex(b, i));
             //_av = Vector<double>.Build.Dense(_a);
             //_bv = Vector<double>.Build.Dense(_b);
+
+            r = new double[N];
         }
 
         [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderAddArrays()
         {
-            double[] r = new double[_a.Length];
+            LinearAlgebraControl.Provider.AddVectorToScaledVector(_a, 2.0, _b, r);
+            return r;
+
+            //Complex[] r = new Complex[_a.Length];
+            //LinearAlgebraControl.Provider.AddArrays(_ac, _bc, r);
+            //return r;
+        }
+
+        [Benchmark(OperationsPerInvoke = 1)]
+        public double[] ProviderAddScaledArrays()
+        {
             LinearAlgebraControl.Provider.AddArrays(_a, _b, r);
             return r;
 
@@ -93,38 +105,11 @@ namespace Benchmark.LinearAlgebra
         [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderScaleArrays()
         {
-            double[] r = new double[_a.Length];
             LinearAlgebraControl.Provider.ScaleArray(2.0, _a, r);
             return r;
         }
 
-        //[Benchmark]
-        public double[] SIMDScaleArray()
-        {
-            double[] result = new double[_a.Length];
-            double[] x = _a;
-            double alpha = 2;
-            int index = 0;
-#if !NET40
-            var alphaVec = new SIMDVector(alpha);
-            while (index <= result.Length - SIMDVector.Count)
-            {
-                var xVec = new SIMDVector(x, index);
-                var resultVec = alpha * xVec;
-                resultVec.CopyTo(result, index);
-                index += SIMDVector.Count;
-            }
-#endif
-            //handle whatever elements weren't processed by the SIMD code
-            for (int i = index; i < result.Length; i++)
-            {
-                result[i] = alpha * x[i];
-            }
-
-            return result;
-        }
-
-        //[Benchmark(OperationsPerInvoke = 1)]
+        [Benchmark(OperationsPerInvoke = 1)]
         public double ProviderDotProduct()
         {
             return LinearAlgebraControl.Provider.DotProduct(_a, _b);
@@ -133,7 +118,6 @@ namespace Benchmark.LinearAlgebra
         [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderPointMultiply()
         {
-            double[] r = new double[_a.Length];
             LinearAlgebraControl.Provider.PointWiseMultiplyArrays(_a, _b, r);
             return r;
 
@@ -145,7 +129,6 @@ namespace Benchmark.LinearAlgebra
         //[Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderPointDivide()
         {
-            double[] r = new double[_a.Length];
             LinearAlgebraControl.Provider.PointWiseDivideArrays(_a, _b, r);
             return r;
         }
@@ -153,7 +136,6 @@ namespace Benchmark.LinearAlgebra
         //[Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderPointPower()
         {
-            double[] r = new double[_a.Length];
             LinearAlgebraControl.Provider.PointWisePowerArrays(_a, _b, r);
             return r;
         }
