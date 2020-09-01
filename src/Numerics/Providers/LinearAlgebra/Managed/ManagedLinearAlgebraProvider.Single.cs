@@ -31,6 +31,9 @@ using System;
 using MathNet.Numerics.Threading;
 using Complex = System.Numerics.Complex;
 using QRMethod = MathNet.Numerics.LinearAlgebra.Factorization.QRMethod;
+#if !NET40
+using SIMDVector = System.Numerics.Vector<float>;
+#endif
 using static System.FormattableString;
 
 namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
@@ -71,14 +74,27 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
             else if (alpha == 1.0)
             {
-                for (int i = 0; i < result.Length; i++)
-                {
-                    result[i] = y[i] + x[i];
-                }
+                AddArrays(x, y, result);
             }
             else
             {
-                for (int i = 0; i < result.Length; i++)
+                int index = 0;
+#if !NET40
+                if(Control.UseSIMD)
+                {
+                    var alphaVec = new SIMDVector(alpha);
+                    //Calculate the index of the last element that can be handled by SIMD without overflowing
+                    index = x.Length / SIMDVector.Count * SIMDVector.Count;
+                    for(int i = 0; i < index; i+=SIMDVector.Count)
+                    {
+                        var xVec = new SIMDVector(x, i);
+                        var yVec = new SIMDVector(y, i);
+                        (yVec + (alphaVec * xVec)).CopyTo(result, i);
+                    }
+                }
+#endif
+                //handle whatever elements weren't processed by the SIMD code
+                for (int i = index; i < result.Length; i++)
                 {
                     result[i] = y[i] + (alpha * x[i]);
                 }
@@ -109,7 +125,22 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
             else
             {
-                for (int i = 0; i < result.Length; i++)
+                int index = 0;
+#if !NET40
+                if(Control.UseSIMD)
+                {
+                    var alphaVec = new SIMDVector(alpha);
+                    //Calculate the index of the last element that can be handled by SIMD without overflowing
+                    index = x.Length / SIMDVector.Count * SIMDVector.Count;
+                    for(int i = 0; i < index; i+=SIMDVector.Count)
+                    {
+                        var xVec = new SIMDVector(x, i);
+                        (alphaVec * xVec).CopyTo(result, i);
+                    }
+                }
+#endif
+                //handle whatever elements weren't processed by the SIMD code
+                for (int i = index; i < result.Length; i++)
                 {
                     result[i] = alpha * x[i];
                 }
@@ -159,9 +190,26 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
             }
 
             float sum = 0.0f;
-            for (var index = 0; index < y.Length; index++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
             {
-                sum += y[index]*x[index];
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                var resultVec = SIMDVector.Zero;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    resultVec += xVec * yVec;
+                }
+                for(int i = 0; i < SIMDVector.Count; i++)
+                    sum+=resultVec[i];
+            }
+#endif
+            for (int i = index; i < y.Length; i++)
+            {
+                sum += y[i]*x[i];
             }
 
             return sum;
@@ -199,7 +247,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec + yVec).CopyTo(result, i);
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] + y[i];
             }
@@ -237,7 +299,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec - yVec).CopyTo(result, i);
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] - y[i];
             }
@@ -275,7 +351,21 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            for (int i = 0; i < result.Length; i++)
+            int index = 0;
+#if !NET40
+            if(Control.UseSIMD)
+            {
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec * yVec).CopyTo(result, i);
+                }
+            }
+#endif
+            for (int i = index; i < result.Length; i++)
             {
                 result[i] = x[i] * y[i];
             }
