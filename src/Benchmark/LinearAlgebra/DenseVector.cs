@@ -123,7 +123,7 @@ namespace Benchmark.LinearAlgebra
             //return r;
         }
 
-        //[Benchmark(OperationsPerInvoke = 1)]
+        [Benchmark(OperationsPerInvoke = 1)]
         public double[] ProviderPointDivide()
         {
             LinearAlgebraControl.Provider.PointWiseDivideArrays(_a, _b, r);

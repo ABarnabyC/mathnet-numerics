@@ -403,13 +403,35 @@ namespace MathNet.Numerics.Providers.LinearAlgebra.Managed
                 throw new ArgumentException("All vectors must have the same dimensionality.");
             }
 
-            CommonParallel.For(0, y.Length, 4096, (a, b) =>
+#if !NET40
+            int index = 0;
+            if(Control.UseSIMD)
             {
-                for (int i = a; i < b; i++)
+                //Calculate the index of the last element that can be handled by SIMD without overflowing
+                index = y.Length / SIMDVector.Count * SIMDVector.Count;
+                for(int i = 0; i < index; i+=SIMDVector.Count)
+                {
+                    var xVec = new SIMDVector(x, i);
+                    var yVec = new SIMDVector(y, i);
+                    (xVec / yVec).CopyTo(result, i);
+                }
+            
+                for (int i = index; i < result.Length; i++)
                 {
                     result[i] = x[i] / y[i];
                 }
-            });
+            }
+#endif
+            if (!Control.UseSIMD)
+            {
+                CommonParallel.For(0, y.Length, 4096, (a, b) =>
+                {
+                    for (int i = a; i < b; i++)
+                    {
+                        result[i] = x[i] / y[i];
+                    }
+                });
+            }
         }
 
         /// <summary>
