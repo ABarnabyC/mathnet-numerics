@@ -9,10 +9,7 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearRegression;
 using MathNet.Numerics.LinearAlgebra.Factorization;
-
-#if !NETSTANDARD1_3
 using System.Runtime;
-#endif
 
 namespace MathNet.Numerics
 {
@@ -21,10 +18,7 @@ namespace MathNet.Numerics
     /// </summary>
     [Serializable]
     [DataContract(Namespace = "urn:MathNet/Numerics")]
-    public class Polynomial : IFormattable, IEquatable<Polynomial>
-#if !NETSTANDARD1_3
-        , ICloneable
-#endif
+    public class Polynomial : IFormattable, IEquatable<Polynomial>, ICloneable
     {
         /// <summary>
         /// The coefficients of the polynomial in a
@@ -144,16 +138,36 @@ namespace MathNet.Numerics
         /// </summary>
         /// <param name="z">The location where to evaluate the polynomial at.</param>
         /// <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="coefficients"/> is a null reference.
+        /// </exception>
         public static double Evaluate(double z, params double[] coefficients)
         {
-            double sum = coefficients[coefficients.Length - 1];
-            for (int i = coefficients.Length - 2; i >= 0; --i)
+
+            // 2020-10-07 jbialogrodzki #730 Since this is public API we should probably
+            // handle null arguments? It doesn't seem to have been done consistently in this class though.
+            if (coefficients == null)
+            {
+                throw new ArgumentNullException(nameof(coefficients));
+            }
+
+            // 2020-10-07 jbialogrodzki #730 Zero polynomials need explicit handling.
+            // Without this check, we attempted to peek coefficients at negative indices!
+            int n = coefficients.Length;
+            if (n == 0)
+            {
+                return 0;
+            }
+
+            double sum = coefficients[n - 1];
+            for (int i = n - 2; i >= 0; --i)
             {
                 sum *= z;
                 sum += coefficients[i];
             }
 
             return sum;
+
         }
 
         /// <summary>
@@ -163,16 +177,36 @@ namespace MathNet.Numerics
         /// </summary>
         /// <param name="z">The location where to evaluate the polynomial at.</param>
         /// <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="coefficients"/> is a null reference.
+        /// </exception>
         public static Complex Evaluate(Complex z, params double[] coefficients)
         {
-            Complex sum = coefficients[coefficients.Length - 1];
-            for (int i = coefficients.Length - 2; i >= 0; --i)
+
+            // 2020-10-07 jbialogrodzki #730 Since this is a public API we should probably
+            // handle null arguments? It doesn't seem to have been done consistently in this class though.
+            if (coefficients == null)
+            {
+                throw new ArgumentNullException(nameof(coefficients));
+            }
+
+            // 2020-10-07 jbialogrodzki #730 Zero polynomials need explicit handling.
+            // Without this check, we attempted to peek coefficients at negative indices!
+            int n = coefficients.Length;
+            if (n == 0)
+            {
+                return 0;
+            }
+
+            Complex sum = coefficients[n - 1];
+            for (int i = n - 2; i >= 0; --i)
             {
                 sum *= z;
                 sum += coefficients[i];
             }
 
             return sum;
+
         }
 
         /// <summary>
@@ -182,16 +216,36 @@ namespace MathNet.Numerics
         /// </summary>
         /// <param name="z">The location where to evaluate the polynomial at.</param>
         /// <param name="coefficients">The coefficients of the polynomial, coefficient for power k at index k.</param>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="coefficients"/> is a null reference.
+        /// </exception>
         public static Complex Evaluate(Complex z, params Complex[] coefficients)
         {
-            Complex sum = coefficients[coefficients.Length - 1];
-            for (int i = coefficients.Length - 2; i >= 0; --i)
+
+            // 2020-10-07 jbialogrodzki #730 Since this is a public API we should probably
+            // handle null arguments? It doesn't seem to have been done consistently in this class though.
+            if (coefficients == null)
+            {
+                throw new ArgumentNullException(nameof(coefficients));
+            }
+
+            // 2020-10-07 jbialogrodzki #730 Zero polynomials need explicit handling.
+            // Without this check, we attempted to peek coefficients at negative indices!
+            int n = coefficients.Length;
+            if (n == 0)
+            {
+                return 0;
+            }
+
+            Complex sum = coefficients[n - 1];
+            for (int i = n - 2; i >= 0; --i)
             {
                 sum *= z;
                 sum += coefficients[i];
             }
 
             return sum;
+
         }
 
         /// <summary>
@@ -480,10 +534,34 @@ namespace MathNet.Numerics
         /// <param name="a">Left polynomial</param>
         /// <param name="b">Right polynomial</param>
         /// <returns>Resulting Polynomial</returns>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="a"/> or <paramref name="b"/> is a null reference.
+        /// </exception>
         public static Polynomial Multiply(Polynomial a, Polynomial b)
         {
+
+            // 2020-10-07 jbialogrodzki #730 Since this is a public API we should probably
+            // handle null arguments? It doesn't seem to have been done consistently in this class though.
+            if (a == null)
+            {
+                throw new ArgumentNullException(nameof(a));
+            }
+
+            if (b == null)
+            {
+                throw new ArgumentNullException(nameof(b));
+            }
+
             var ad = a.Degree;
             var bd = b.Degree;
+
+            // 2020-10-07 jbialogrodzki #730 Zero polynomials need explicit handling.
+            // Without this check, we attempted to create arrays of negative lengths!
+            if (ad < 0 || bd < 0)
+            {
+                return Polynomial.Zero;
+            }
+
             double[] ac = a.Coefficients;
             double[] bc = b.Coefficients;
 
@@ -499,6 +577,7 @@ namespace MathNet.Numerics
             }
 
             return new Polynomial(result);
+
         }
 
         /// <summary>
@@ -1049,7 +1128,6 @@ namespace MathNet.Numerics
             return new Polynomial(coefficients);
         }
 
-#if !NETSTANDARD1_3
         /// <summary>
         /// Creates a new object that is a copy of the current instance.
         /// </summary>
@@ -1060,7 +1138,6 @@ namespace MathNet.Numerics
         {
             return Clone();
         }
-#endif
 
         #endregion
     }

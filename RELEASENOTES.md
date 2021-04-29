@@ -1,3 +1,19 @@
+### 4.15.0 - 2021-01-07
+* Precision: Round (with integer part rounding) *~Jon Larborn*
+* Precision: RoundToMultiple, RoundToPower
+* F#: BigRational.FromDecimal *~Brian Berns*
+
+### 4.14.0 - 2021-01-01
+* Optimization: Avoid losing precision in golden section minimizer *~Daniel Fox*
+* Interpolation: Monotone-preserving Piecewise Cubic Hermite Polynomial (PCHIP) *~Febin*
+* Linear Algebra: Sparse COO format fix handling if not sorted or with duplicates *~Jong Hyun Kim*
+* Linear Algebra: Matrix.Resize
+
+### 4.13.0 - 2020-12-30
+* Linear Algebra: sparse solver native provider *~Jong Hyun Kim*
+* Polynomial: fix handling of zero polynomials *~Jakub Bialogrodzki*
+* AppSwitches support to disable native providers or their probing
+
 ### 4.12.0 - 2020-08-92
 * Linear Algebra: allow zero-length vectors and matrices *~Evangelink*
 * Distributions: Beta-Binomial Distribution *~Andrew Willshire*
